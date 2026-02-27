@@ -182,3 +182,5 @@ cython_debug/
 RNA_seq/*
 
 instructions.md
+
+data_set
