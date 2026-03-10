@@ -6,21 +6,25 @@ if __name__ == '__main__':
 
 	code = 1
 	parser = argparse.ArgumentParser()
-	
+	# seed genes
 	parser.add_argument('-s',default = None)
+	# disease genes
 	parser.add_argument('-de',default = None)
-
-
+	# PPI network
 	parser.add_argument('-p',default = None)	
+	# co-expression network
 	parser.add_argument('-c',default = None)
-
+	# disease ontology
 	parser.add_argument('-do',default = None)
+	# gene ontologies
 	parser.add_argument('-a',default = None)
-
+	# output file path
 	parser.add_argument('-o',default = None)
-	
+	# restart probability
 	parser.add_argument('-r',default = 0.9)
+	# alpha parameter
 	parser.add_argument('-x',default = 0.5)
+	# beta parameter
 	parser.add_argument('-y',default = 0.5)
 
 
