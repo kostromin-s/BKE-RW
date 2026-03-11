@@ -1,127 +1,32 @@
-from biological_random_walks.BiologicalRandomWalks import BiologicalRandomWalks
+from hydra.core.hydra_config import HydraConfig
 import os
-import argparse
-
-if __name__ == '__main__':
-
-	code = 1
-	parser = argparse.ArgumentParser()
-	# seed genes
-	parser.add_argument('-s',default = None)
-	# disease genes
-	parser.add_argument('-de',default = None)
-	# PPI network
-	parser.add_argument('-p',default = None)	
-	# co-expression network
-	parser.add_argument('-c',default = None)
-	# disease ontology
-	parser.add_argument('-do',default = None)
-	# gene ontologies
-	parser.add_argument('-a',default = None)
-	# output file path
-	parser.add_argument('-o',default = None)
-	# restart probability
-	parser.add_argument('-r',default = 0.9)
-	# alpha parameter
-	parser.add_argument('-x',default = 0.5)
-	# beta parameter
-	parser.add_argument('-y',default = 0.5)
+import hydra
+from omegaconf import DictConfig
+from biological_random_walks.BiologicalRandomWalks import BiologicalRandomWalks
 
 
-	args = parser.parse_args()
-	personalization_vector_creation_policies = []
+@hydra.main(version_base=None, config_path="config", config_name="config")
+def main(cfg: DictConfig):
 
-	if args.s is None:
-		
-		print("No Seed dected")
-		exit(code)
+    run_dir = HydraConfig.get().runtime.output_dir
+    output_path = os.path.join(run_dir, "result.txt")
 
-	if args.p is None and args.c is None:
-		print("No Networks dected")
-		exit(code)
+    brw = BiologicalRandomWalks(
+        seed_file_path=cfg.experiment.seed,
+        secondary_seed_file_path=cfg.experiment.de,
 
-	if args.p is not None:
-		ppi_file_path = args.p
-	else:
-		ppi_file_path = None
-	
-	if args.c is not None:
-		co_expression_file_path = args.c
-	else:
-		co_expression_file_path = None
+        ppi_file_path=cfg.paths.ppi,
+        co_expression_file_path=cfg.experiment.coexpr,
 
-	if args.p is not None and args.c is not None:
-		matrix_aggregation_policy = "convex_combination"
-	
-	elif args.p is not None:
-		matrix_aggregation_policy = "only_ppi_network"
-	
-	else:
-		matrix_aggregation_policy = "only_co_expression_network"
+        disease_ontology_file_path=cfg.experiment.disease_ontology,
+        map__gene__ontologies_file_path=cfg.paths.ontology_network,
 
+        restart_prob=cfg.params.restart_prob,
+        alpha=cfg.params.alpha,
+        beta=cfg.params.beta,
 
-	if args.s is not None:
-		seed_file_path = args.s
+        output_file_path=output_path
+    )
 
-	if args.de is not None:
-		secondary_seed_file_path = args.de
-		personalization_vector_creation_policies.append("topological")
-	else:
-		secondary_seed_file_path = None
-
-
-	if args.do is not None and args.a is not None:
-		personalization_vector_creation_policies.append("biological")
-		network_weight_flag = True
-		
-		ontologies_path = args.a
-		disease_ontology_path = args.do
-
-	else:
-
-		network_weight_flag = False
-		ontologies_path = None
-		disease_ontology_path = None
-	
-	if args.o is not None:
-		output_file_path = args.o
-	else:
-		output_file_path = None
-
-	if len(personalization_vector_creation_policies) == 0:
-		personalization_vector_creation_policies.append("default")
-
-	
-
-	r = float(args.r)
-	
-	alpha = float(args.x)
-	beta = float(args.y)
-
-
-	brw = BiologicalRandomWalks(
-			
-		seed_file_path = seed_file_path,
-		secondary_seed_file_path = secondary_seed_file_path,
-
-		ppi_file_path = ppi_file_path,
-		co_expression_file_path = co_expression_file_path,
-
-		matrix_aggregation_policy = matrix_aggregation_policy,
-
-
-		disease_ontology_file_path= disease_ontology_path,
-		map__gene__ontologies_file_path = ontologies_path,
-
-		personalization_vector_creation_policies = personalization_vector_creation_policies,
-		personalization_vector_aggregation_policy = "Sum",
-
-		restart_prob = r,
-
-		alpha = alpha,
-		beta = beta,
-
-		network_weight_flag = network_weight_flag,
-
-		output_file_path = output_file_path
-	)
+if __name__ == "__main__":
+    main()
