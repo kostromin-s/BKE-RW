@@ -1,0 +1,4 @@
+seed: data_set/seed_set/TCGA-COAD_seed.txt
+de: data_set/differentially_expressed_genes/TCGA-COAD_de_genes.tsv
+coexpr: data_set/co-expression_networks/TCGA-COAD__co_expression__t_70%.tsv
+disease_ontology: data_set/disease_specific_ontologies/TCGA-COAD_disease_ontologies.txt

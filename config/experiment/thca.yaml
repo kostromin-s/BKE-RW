@@ -1,0 +1,4 @@
+seed: data_set/seed_set/TCGA-THCA_seed.txt
+de: data_set/differentially_expressed_genes/TCGA-THCA_de_genes.tsv
+coexpr: data_set/co-expression_networks/TCGA-THCA__co_expression__t_70%.tsv
+disease_ontology: data_set/disease_specific_ontologies/TCGA-THCA_disease_ontologies.txt
