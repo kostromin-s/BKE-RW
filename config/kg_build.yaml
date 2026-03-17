@@ -1,0 +1,7 @@
+defaults:
+  - _self_
+
+task: kg_build
+
+output:
+  graph_path: info_KGs/kg.graphml
