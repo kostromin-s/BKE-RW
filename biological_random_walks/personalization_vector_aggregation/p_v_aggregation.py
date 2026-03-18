@@ -31,13 +31,3 @@ class PersonalizationVectorAggregation():
 		personalization_vectors = {k: v/l_1 for k,v in aggregated_personalization_vector.items()}
 
 		return personalization_vectors
-
-
-
-
-
-
-
-
-
-

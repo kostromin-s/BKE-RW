@@ -1,7 +1,9 @@
 defaults:
   - _self_
 
-task: kg_build
+data:
+  gene_term: ../data_set/ontology_network/ontology_network.tsv
+  ppi: ../data_set/ppi_network/HIPPIE.tsv
 
 output:
-  graph_path: info_KGs/kg.graphml
+  path: KGs/kg.csv
