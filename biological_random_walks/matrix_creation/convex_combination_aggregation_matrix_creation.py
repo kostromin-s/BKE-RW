@@ -13,8 +13,6 @@ class ConvexCombinationMatrixAggregationCreation(MatrixAggregation):
 		self.choose_policy_exit = 1
 		self.beta = beta
 
-
-
 	def choose_policy(self,V,U, chosen_policy = "PPI_network"):
 		
 		if chosen_policy == "Intersection":
@@ -24,7 +22,6 @@ class ConvexCombinationMatrixAggregationCreation(MatrixAggregation):
 		else:
 			print("No corrected choosen policy", chosen_policy)
 			exit(self.choose_policy_exit)
-
 
 	def run(self, chosen_policy):
 

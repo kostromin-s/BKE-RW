@@ -54,6 +54,29 @@ class Loader():
 
 
 	def run(self,):
+		"""
+		def run(self) -> tuple:
+			
+			Load and initialize all network and seed data for biological random walks analysis.
+			This method loads multiple data sources based on configured file paths:
+			- PPI (Protein-Protein Interaction) network
+			- Co-expression network
+			- Seed set genes
+			- Secondary seed set genes
+			- Gene ontology mappings
+			- Disease ontology
+			Raises:
+				AssertionError: If no network file (PPI or co-expression) is provided.
+				AssertionError: If no seed file is provided.
+			Returns:
+				tuple: A tuple containing:
+					- PPI (networkx.Graph or None): Protein-protein interaction network
+					- CO_expression (networkx.Graph or None): Co-expression network
+					- seed_set (list): Primary seed set genes
+					- secondary_seed_set (list or None): Secondary seed set genes
+					- map__gene__ontologies (dict or None): Gene to ontology mappings
+					- disease_ontology (dict or None): Disease ontology data
+			"""
 		
 		assert self.ppi_file_path != None or self.co_expression_file_path != None, "No network as input of Random Walks"
 		assert self.seed_file_path != None, "No Seed as input of Random Walks"
