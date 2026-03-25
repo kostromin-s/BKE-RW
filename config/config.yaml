@@ -2,9 +2,12 @@ defaults:
   - _self_
   - experiment: brca
 
+method: original
+
 paths:
   ppi: data_set/ppi_network/HIPPIE.tsv
   ontology_network: data_set/ontology_network/ontology_network.tsv
+  gene_similarity: knowledge/gene_similarity_network.csv
 
 params:
   restart_prob: 0.9
