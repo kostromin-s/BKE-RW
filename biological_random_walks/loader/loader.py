@@ -50,8 +50,7 @@ class Loader():
 			self.map_gene_ontologies_file_path = map_gene_ontologies_file_path
 		else:
 			self.map_gene_ontologies_file_path = None
-
-
+			
 
 	def run(self,):
 		"""
