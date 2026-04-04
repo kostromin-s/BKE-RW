@@ -2,59 +2,145 @@ from hydra.core.hydra_config import HydraConfig
 import os
 import hydra
 from omegaconf import DictConfig
+
 from biological_random_walks.BiologicalRandomWalks import BiologicalRandomWalks
 from biological_random_walks.BiologicalRandomWalksWithGeneSim import BiologicalRandomWalksWithGeneSim
+
+import random
+import math
+import csv
+
+
+def load_seed_file(path):
+    with open(path) as f:
+        return set(line.strip() for line in f if line.strip())
+
+
+def split_seed(seed_set, train_ratio=0.7):
+    seed_list = list(seed_set)
+    random.shuffle(seed_list)
+    split_idx = int(len(seed_list) * train_ratio)
+    return set(seed_list[:split_idx]), set(seed_list[split_idx:])
+
+
+def recall_at_k(ranked_list, test_seed, k):
+    top_k = [g for g, _ in ranked_list[:k]]
+    hit = len(set(top_k) & test_seed)
+    return hit / len(test_seed) if len(test_seed) > 0 else 0
+
+
+def dcg_at_k(ranked_list, test_seed, k):
+    dcg = 0.0
+    for i, (g, _) in enumerate(ranked_list[:k]):
+        if g in test_seed:
+            dcg += 1 / math.log2(i + 2)
+    return dcg
+
+
+def ndcg_at_k(ranked_list, test_seed, k):
+    dcg = dcg_at_k(ranked_list, test_seed, k)
+    ideal_hits = min(len(test_seed), k)
+    idcg = sum(1 / math.log2(i + 2) for i in range(ideal_hits))
+    return dcg / idcg if idcg > 0 else 0
+
 
 @hydra.main(version_base=None, config_path="config", config_name="config")
 def main(cfg: DictConfig):
 
     run_dir = HydraConfig.get().runtime.output_dir
-    output_path = os.path.join(run_dir, "result.txt")
 
-    if cfg.method == "gene_sim":
+    full_seed = load_seed_file(cfg.experiment.seed)
 
-        brw = BiologicalRandomWalksWithGeneSim(
+    all_metrics = []
 
-            gene_similarity_file_path = cfg.paths.gene_similarity,
+    for i in range(10):
+        print(f"\n===== RUN {i} =====")
 
-            seed_file_path=cfg.experiment.seed,
-            secondary_seed_file_path=cfg.experiment.de,
+        random.seed(42 + i)
 
-            ppi_file_path=cfg.paths.ppi,
-            co_expression_file_path=cfg.experiment.coexpr,
+        train_seed, test_seed = split_seed(full_seed, 0.7)
 
-            disease_ontology_file_path=cfg.experiment.disease_ontology,
-            map__gene__ontologies_file_path=cfg.paths.ontology_network,
+        output_path = os.path.join(run_dir, f"result{i}.txt")
 
-            restart_prob=cfg.params.restart_prob,
-            alpha=cfg.params.alpha,
-            beta=cfg.params.beta,
+        if cfg.method == "gene_sim":
 
-            network_weight_flag=False,
+            brw = BiologicalRandomWalksWithGeneSim(
 
-            output_file_path=output_path
-        )
+                gene_similarity_file_path=cfg.paths.gene_similarity,
 
-    else:  # original
+                seed_file_path=cfg.experiment.seed,
+                seed_set_override=train_seed,
 
-        brw = BiologicalRandomWalks(
+                secondary_seed_file_path=cfg.experiment.de,
 
-            seed_file_path=cfg.experiment.seed,
-            secondary_seed_file_path=cfg.experiment.de,
+                ppi_file_path=cfg.paths.ppi,
+                co_expression_file_path=cfg.experiment.coexpr,
 
-            ppi_file_path=cfg.paths.ppi,
-            co_expression_file_path=cfg.experiment.coexpr,
+                disease_ontology_file_path=cfg.experiment.disease_ontology,
+                map__gene__ontologies_file_path=cfg.paths.ontology_network,
 
-            disease_ontology_file_path=cfg.experiment.disease_ontology,
-            map__gene__ontologies_file_path=cfg.paths.ontology_network,
+                restart_prob=cfg.params.restart_prob,
+                alpha=cfg.params.alpha,
+                beta=cfg.params.beta,
 
-            restart_prob=cfg.params.restart_prob,
-            alpha=cfg.params.alpha,
-            beta=cfg.params.beta,
+                network_weight_flag=False,
 
-            output_file_path=output_path
-        )
+                output_file_path=output_path
+            )
+
+        else:
+
+            brw = BiologicalRandomWalks(
+
+                seed_file_path=cfg.experiment.seed,
+                seed_set_override=train_seed,
+
+                secondary_seed_file_path=cfg.experiment.de,
+
+                ppi_file_path=cfg.paths.ppi,
+                co_expression_file_path=cfg.experiment.coexpr,
+
+                disease_ontology_file_path=cfg.experiment.disease_ontology,
+                map__gene__ontologies_file_path=cfg.paths.ontology_network,
+
+                restart_prob=cfg.params.restart_prob,
+                alpha=cfg.params.alpha,
+                beta=cfg.params.beta,
+
+                output_file_path=output_path
+            )
+
+        ranked_list = brw.ranked_list
+
+        r100 = recall_at_k(ranked_list, test_seed, 100)
+        r200 = recall_at_k(ranked_list, test_seed, 200)
+
+        ndcg100 = ndcg_at_k(ranked_list, test_seed, 100)
+        ndcg200 = ndcg_at_k(ranked_list, test_seed, 200)
+
+        print(f"Recall@100: {r100:.4f} | Recall@200: {r200:.4f}")
+        print(f"nDCG@100: {ndcg100:.4f} | nDCG@200: {ndcg200:.4f}")
+
+        all_metrics.append([r100, r200, ndcg100, ndcg200])
+
+    metric_path = os.path.join(run_dir, "metrics.csv")
+
+    avg = [sum(x)/len(x) for x in zip(*all_metrics)]
+
+    with open(metric_path, "w") as f:
+        writer = csv.writer(f)
+
+        writer.writerow(["Run", "Recall@100","Recall@200","nDCG@100","nDCG@200"])
+
+        for i, row in enumerate(all_metrics):
+            writer.writerow([f"result{i}"] + row)
+
+        writer.writerow(["AVG"] + avg)
+
+    print("\nDone!")
+    print("Results folder:", run_dir)
+    print("Metrics file:", metric_path)
+
 
 if __name__ == "__main__":
     main()
-    

@@ -21,7 +21,7 @@ class BiologicalRandomWalks():
 	
 	def __init__(self,
 		seed_file_path,
-		
+		seed_set_override = None,
 		ppi_file_path = None, 
 		co_expression_file_path = None,
 		
@@ -49,10 +49,11 @@ class BiologicalRandomWalks():
 
 		t0 = time.perf_counter()
 
+		self.seed_set_override = seed_set_override
+
 		# Iper Parameters
 		self.alpha = alpha
 		self.beta = beta
-
 
 		print("Loading Networks....")
 		self.file_loader_step = Loader(ppi_file_path,
@@ -64,9 +65,9 @@ class BiologicalRandomWalks():
 			map_gene_ontologies_file_path = map__gene__ontologies_file_path)
 		
 		PPI, CO_expression, seed_set, secondary_seed_set, map__gene__ontologies, disease_ontology = self.file_loader_step.run()
+		seed_set = self.seed_set_override if self.seed_set_override is not None else seed_set
 		print("Loading Time:", time.perf_counter() - t0)
-		print()
-
+		print()		
 
 		if network_weight_flag:
 			t0 = time.perf_counter()
@@ -178,8 +179,6 @@ class BiologicalRandomWalks():
 
 		if topological_p_v != None:
 			personalization_vectors.append(topological_p_v)
-
-
 		
 		return personalization_vectors
 
