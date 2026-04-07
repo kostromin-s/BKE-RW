@@ -170,6 +170,7 @@ class BiologicalRandomWalks():
 
 			biological_p_v = personalization_vector_creation_step.run()
 
+		
 
 		if default_p_v != None:
 			personalization_vectors.append(default_p_v)
