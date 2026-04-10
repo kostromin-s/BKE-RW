@@ -110,7 +110,7 @@ def main(cfg: DictConfig):
                 output_file_path=output_path
             )
 
-        ranked_list = brw.ranked_list
+        ranked_list = [(g, s) for g, s in brw.ranked_list if g not in train_seed]
 
         r100 = recall_at_k(ranked_list, test_seed, 100)
         r200 = recall_at_k(ranked_list, test_seed, 200)
