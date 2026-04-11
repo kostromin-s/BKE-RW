@@ -109,7 +109,10 @@ def main(cfg: DictConfig):
 
                 output_file_path=output_path
             )
+        # tinh metrics chua loai bo train_seed
+        # ranked_list = brw.ranked_list
 
+        # loai bo train_seed khoi ranked_list
         ranked_list = [(g, s) for g, s in brw.ranked_list if g not in train_seed]
 
         r100 = recall_at_k(ranked_list, test_seed, 100)
