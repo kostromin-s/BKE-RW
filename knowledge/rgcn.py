@@ -159,7 +159,7 @@ def main():
     model = RGCN(
         num_nodes=data.num_nodes,
         num_relations=len(rel2id),
-        hidden_dim=128,
+        hidden_dim=64,
         dropout=0.3   # ✅ dễ tune
     )
 
@@ -175,7 +175,7 @@ def main():
     model = train(
         model,
         data,
-        epochs=50,
+        epochs=10,
         lr=0.01,
         num_neg=5   # ✅ multi-negative
     )
@@ -190,7 +190,7 @@ def main():
     sim = build_similarity(gene_emb)
 
     print("Build weighted network...")
-    edges = build_weighted_edges(sim, gene_ids, k=20)
+    edges = build_weighted_edges(sim, gene_ids, k=10)
 
     print("Saving...")
     out_df = pd.DataFrame(edges, columns=["u", "v", "weight"])
