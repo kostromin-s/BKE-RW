@@ -78,7 +78,8 @@ def main(cfg: DictConfig):
 
                 disease_ontology_file_path=cfg.experiment.disease_ontology,
                 map__gene__ontologies_file_path=cfg.paths.ontology_network,
-
+                # personalization_vector_creation_policies = ["biological","topological"],
+                personalization_vector_creation_policies = ["embedding","topological"],
                 restart_prob=cfg.params.restart_prob,
                 alpha=cfg.params.alpha,
                 beta=cfg.params.beta,
@@ -102,7 +103,8 @@ def main(cfg: DictConfig):
 
                 disease_ontology_file_path=cfg.experiment.disease_ontology,
                 map__gene__ontologies_file_path=cfg.paths.ontology_network,
-
+                # personalization_vector_creation_policies = ["biological","topological"],
+                personalization_vector_creation_policies = ["embedding","topological"],
                 restart_prob=cfg.params.restart_prob,
                 alpha=cfg.params.alpha,
                 beta=cfg.params.beta,
@@ -110,10 +112,10 @@ def main(cfg: DictConfig):
                 output_file_path=output_path
             )
         # tinh metrics chua loai bo train_seed
-        # ranked_list = brw.ranked_list
+        ranked_list = brw.ranked_list
 
         # loai bo train_seed khoi ranked_list
-        ranked_list = [(g, s) for g, s in brw.ranked_list if g not in train_seed]
+        # ranked_list = [(g, s) for g, s in brw.ranked_list if g not in train_seed]
 
         r100 = recall_at_k(ranked_list, test_seed, 100)
         r200 = recall_at_k(ranked_list, test_seed, 200)

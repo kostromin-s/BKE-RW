@@ -8,6 +8,7 @@ from biological_random_walks.matrix_creation.convex_combination_aggregation_matr
 from biological_random_walks.personalization_vector_creation.default_personalization_vector_creation import DefaultPersonalizationVectorCreation
 from biological_random_walks.personalization_vector_creation.biological_personalization_vector_creation import BiologicalPersonalizationVectorCreation
 from biological_random_walks.personalization_vector_creation.topological_personalization_vector_creation import TopologicalPersonalizationVectorCreation
+from biological_random_walks.personalization_vector_creation.embedding_personalization_vector_creation import EmbeddingPersonalizationVectorCreation
 
 
 from biological_random_walks.personalization_vector_aggregation.p_v_aggregation import PersonalizationVectorAggregation
@@ -146,7 +147,7 @@ class BiologicalRandomWalks():
 		chosen_policies = ["biological"]):
 
 		default_p_v = None
-		overwritten_p_v = None
+		embedding_p_v = None
 		biological_p_v = None
 		topological_p_v = None
 
@@ -170,10 +171,26 @@ class BiologicalRandomWalks():
 
 			biological_p_v = personalization_vector_creation_step.run()
 
+		if "embedding" in chosen_policies:
+
+			path_gene_embedding = "knowledge/gene_embeddings.tsv"
+
+			personalization_vector_creation_step = EmbeddingPersonalizationVectorCreation(
+				universe = V,
+				path_gene_embedding = path_gene_embedding,
+				seed_gene = seed_set,
+				k = 0)
+
+			embedding_p_v = personalization_vector_creation_step.run(use_numpy = True)
+
+			# If embedding policy is chosen, we will only use the embedding personalization vector and ignore the rest (if any)
 		
 
 		if default_p_v != None:
 			personalization_vectors.append(default_p_v)
+
+		if embedding_p_v != None:
+			personalization_vectors.append(embedding_p_v)
 
 		if biological_p_v != None:
 			personalization_vectors.append(biological_p_v)

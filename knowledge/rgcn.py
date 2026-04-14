@@ -124,6 +124,13 @@ def get_gene_embeddings(model, data, id2node, df):
 
     return gene_emb, gene_ids
 
+def save_gene_embeddings(gene_emb, gene_ids, out_path="gene_embeddings.tsv"):
+    emb_np = gene_emb.cpu().numpy()
+
+    df = pd.DataFrame(emb_np)
+    df.insert(0, "gene", gene_ids)
+
+    df.to_csv(out_path, sep="\t", index=False)
 
 def build_similarity(gene_emb):
     norm_emb = F.normalize(gene_emb)
@@ -182,6 +189,9 @@ def main():
 
     print("Extract gene embeddings...")
     gene_emb, gene_ids = get_gene_embeddings(model, data, id2node, df)
+
+    print("Saving gene embeddings...")
+    save_gene_embeddings(gene_emb, gene_ids, "gene_embeddings.tsv")
 
     print("After training mean/std:",
           gene_emb.mean().item(), gene_emb.std().item())
