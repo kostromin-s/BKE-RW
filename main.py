@@ -53,12 +53,15 @@ def main(cfg: DictConfig):
 
     all_metrics = []
 
+
     for i in range(10):
         print(f"\n===== RUN {i} =====")
 
         random.seed(42 + i)
 
         train_seed, test_seed = split_seed(full_seed, 0.7)
+        # Thử đánh giá trên toàn bộ seed (không chia train/test)
+        # test_seed = full_seed
 
         output_path = os.path.join(run_dir, f"result{i}.txt")
 
@@ -78,8 +81,8 @@ def main(cfg: DictConfig):
 
                 disease_ontology_file_path=cfg.experiment.disease_ontology,
                 map__gene__ontologies_file_path=cfg.paths.ontology_network,
-                # personalization_vector_creation_policies = ["biological","topological"],
-                personalization_vector_creation_policies = ["embedding","topological"],
+                personalization_vector_creation_policies = ["biological","topological"],
+                # personalization_vector_creation_policies = ["embedding","topological"],
                 restart_prob=cfg.params.restart_prob,
                 alpha=cfg.params.alpha,
                 beta=cfg.params.beta,
@@ -103,8 +106,8 @@ def main(cfg: DictConfig):
 
                 disease_ontology_file_path=cfg.experiment.disease_ontology,
                 map__gene__ontologies_file_path=cfg.paths.ontology_network,
-                # personalization_vector_creation_policies = ["biological","topological"],
-                personalization_vector_creation_policies = ["embedding","topological"],
+                personalization_vector_creation_policies = ["biological","topological"],
+                # personalization_vector_creation_policies = ["embedding","topological"],
                 restart_prob=cfg.params.restart_prob,
                 alpha=cfg.params.alpha,
                 beta=cfg.params.beta,
