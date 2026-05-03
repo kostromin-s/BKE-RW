@@ -171,7 +171,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-
     c = TCGAAnalyzer(
         
         sample_sheet_file_path =args.gdc,
