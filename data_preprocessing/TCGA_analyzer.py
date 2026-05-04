@@ -95,7 +95,7 @@ class TCGAAnalyzer():
                         continue
 
                     ensembl_id = row[0]
-                    RNA_seq = row[1]
+                    RNA_seq = row[3]
                     
                     gene_set.add(ensembl_id)
                     map__patient__ensembl_id__expression[case_id][ensembl_id] = RNA_seq
@@ -106,6 +106,8 @@ class TCGAAnalyzer():
     def __write_table__(self,patient_set,gene_set,map__patient__ensembl_id__expression,project_id,label):
         M = []
 
+        os.makedirs(self.output_dir_path, exist_ok=True)
+        
         csv_writer = csv.writer(open(self.output_dir_path + project_id + "__" + label + ".tsv","w", newline=''),delimiter = "\t")
 
         gene_list = list(gene_set)

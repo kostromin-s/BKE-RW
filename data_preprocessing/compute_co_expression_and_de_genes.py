@@ -53,7 +53,7 @@ def create_de_genes(
 	output_file_path,
 	threshold = 2.5,
 	
-	identifier_file_path = "/Users/leonardomartini/Documents/network_medicine/BRW/data_set/network/HIPPIE_candidate_list.txt",
+	identifier_file_path = "../data_set/ppi_network/HIPPIE_node_list.txt",
 
 	):
 		
@@ -152,7 +152,7 @@ if __name__ == '__main__':
 	
 	parser.add_argument('-T',default = None)
 	parser.add_argument('-C',default = None)
-	parser.add_argument('-f',default = "../data_set/network/HIPPIE_candidate_list.txt")
+	parser.add_argument('-f',default = "../data_set/ppi_network/HIPPIE_node_list.txt")
 	parser.add_argument('-de',default = None)
 	parser.add_argument('-co',default = None)
 
