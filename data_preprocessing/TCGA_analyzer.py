@@ -128,7 +128,6 @@ class TCGAAnalyzer():
         csv_writer.writerow(patient_list)
         csv_writer.writerows(M)
 
-    
 
     def __remove_null_columns__(self,df):
         dff = pd.DataFrame()
