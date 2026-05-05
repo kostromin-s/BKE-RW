@@ -96,15 +96,16 @@ if __name__ == '__main__':
 	parser.add_argument('-s',default = None)
 	parser.add_argument('-o',default = None)
 
+	args = None
 
 	args = parser.parse_args()
 
-d = DiseaseOntologies(
-	
-	ontology_graph_file_path = args.a, 
-	disease_seed_file_path = args.s, 
-	output_file_path = args.o
+	d = DiseaseOntologies(
+		
+		ontology_graph_file_path = args.a, 
+		disease_seed_file_path = args.s, 
+		output_file_path = args.o
 
-	)
+		)
 
-d.run()
+	d.run()
