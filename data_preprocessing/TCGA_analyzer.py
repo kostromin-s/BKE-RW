@@ -66,41 +66,60 @@ class TCGAAnalyzer():
     
 
     def __get_map__patient__ensembl_id__expression(self, case_control_dict):
-        
+    
         map__patient__ensembl_id__expression = {}
         patient_set = set()
         gene_set = set()
+        missing_files = []
 
-        for file_id,record in case_control_dict.items():
+        for file_id, record in case_control_dict.items():
 
             print(file_id)
-                
+
             file_name = record[0]
             case_id = record[1]
+
+            patient_file_path = self.TCGA_directory_path + file_id + "/" + file_name
+
+            # 🚨 Skip nếu không có trong manifest (optional nhưng nên có)
+            if hasattr(self, "manifest_sample_ids") and file_id not in self.manifest_sample_ids:
+                print(f"[SKIP - NOT IN MANIFEST] {file_id}")
+                continue
+
+            # 🚨 Skip nếu file không tồn tại
+            if not os.path.exists(patient_file_path):
+                print(f"[MISSING FILE] {patient_file_path}")
+                missing_files.append(patient_file_path)
+                continue
 
             map__patient__ensembl_id__expression[case_id] = {}
             patient_set.add(case_id)
 
-            patient_file_path = self.TCGA_directory_path + file_id + "/" + file_name
+            try:
+                with open(patient_file_path, 'r', encoding='utf-8') as f_in:
+                    csv_reader = csv.reader(f_in, delimiter="\t")
 
-            with open(patient_file_path, 'r', encoding='utf-8') as f_in:
-                csv_reader = csv.reader(f_in, delimiter="\t")
-                    
-                for row in csv_reader:
-                    if len(row) < 2:
-                        continue           
-                    if str(row[0]).startswith('#'):
-                        continue
-                    if str(row[0]).startswith('gene_id'):
-                        continue
+                    for row in csv_reader:
+                        if len(row) < 4:
+                            continue
+                        if str(row[0]).startswith('#'):
+                            continue
+                        if str(row[0]).startswith('gene_id'):
+                            continue
 
-                    ensembl_id = row[0]
-                    RNA_seq = row[3]
-                    
-                    gene_set.add(ensembl_id)
-                    map__patient__ensembl_id__expression[case_id][ensembl_id] = RNA_seq
+                        ensembl_id = row[0]
+                        RNA_seq = row[3]
 
-        return patient_set,gene_set,map__patient__ensembl_id__expression
+                        gene_set.add(ensembl_id)
+                        map__patient__ensembl_id__expression[case_id][ensembl_id] = RNA_seq
+
+            except Exception as e:
+                print(f"[ERROR READING FILE] {patient_file_path} | {e}")
+                continue
+
+        print(f"Total missing files: {len(missing_files)}")
+
+        return patient_set, gene_set, map__patient__ensembl_id__expression
 
 
     def __write_table__(self,patient_set,gene_set,map__patient__ensembl_id__expression,project_id,label):

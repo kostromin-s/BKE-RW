@@ -13,4 +13,13 @@ params:
   restart_prob: 0.9
   alpha: 0.5
   beta: 0.5
-  
+
+evaluation:
+  mode: fixed   # dynamic
+
+  fixed:
+    k: [100, 200]
+
+  dynamic:
+    c_values: [8, 16]
+    k_max: 1500

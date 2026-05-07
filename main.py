@@ -44,6 +44,29 @@ def ndcg_at_k(ranked_list, test_seed, k):
     return dcg / idcg if idcg > 0 else 0
 
 
+# 🔹 NEW: compute k list based on evaluation mode
+def compute_k_list(cfg, test_size):
+    mode = cfg.evaluation.mode
+
+    if mode == "fixed":
+        return list(cfg.evaluation.fixed.k)
+
+    elif mode == "dynamic":
+        k_list = []
+        for c in cfg.evaluation.dynamic.c_values:
+            k = int(c * test_size)
+
+            if "k_max" in cfg.evaluation.dynamic:
+                k = min(k, cfg.evaluation.dynamic.k_max)
+
+            k_list.append(k)
+
+        return k_list
+
+    else:
+        raise ValueError(f"Unknown evaluation mode: {mode}")
+
+
 @hydra.main(version_base=None, config_path="config", config_name="config")
 def main(cfg: DictConfig):
 
@@ -52,7 +75,8 @@ def main(cfg: DictConfig):
     full_seed = load_seed_file(cfg.experiment.seed)
 
     all_metrics = []
-
+    header_written = False
+    header = []
 
     for i in range(10):
         print(f"\n===== RUN {i} =====")
@@ -60,8 +84,6 @@ def main(cfg: DictConfig):
         random.seed(42 + i)
 
         train_seed, test_seed = split_seed(full_seed, 0.7)
-        # Thử đánh giá trên toàn bộ seed (không chia train/test)
-        # test_seed = full_seed
 
         output_path = os.path.join(run_dir, f"result{i}.txt")
 
@@ -81,8 +103,8 @@ def main(cfg: DictConfig):
 
                 disease_ontology_file_path=cfg.experiment.disease_ontology,
                 map__gene__ontologies_file_path=cfg.paths.ontology_network,
-                personalization_vector_creation_policies = ["biological","topological"],
-                # personalization_vector_creation_policies = ["embedding","topological"],
+                personalization_vector_creation_policies=["biological", "topological"],
+
                 restart_prob=cfg.params.restart_prob,
                 alpha=cfg.params.alpha,
                 beta=cfg.params.beta,
@@ -106,39 +128,51 @@ def main(cfg: DictConfig):
 
                 disease_ontology_file_path=cfg.experiment.disease_ontology,
                 map__gene__ontologies_file_path=cfg.paths.ontology_network,
-                personalization_vector_creation_policies = ["biological","topological"],
-                # personalization_vector_creation_policies = ["embedding","topological"],
+                personalization_vector_creation_policies=["biological", "topological"],
+
                 restart_prob=cfg.params.restart_prob,
                 alpha=cfg.params.alpha,
                 beta=cfg.params.beta,
 
                 output_file_path=output_path
             )
-        # tinh metrics chua loai bo train_seed
+
         ranked_list = brw.ranked_list
 
-        # loai bo train_seed khoi ranked_list
+        # (giữ nguyên logic gốc: KHÔNG loại train_seed)
         # ranked_list = [(g, s) for g, s in brw.ranked_list if g not in train_seed]
 
-        r100 = recall_at_k(ranked_list, test_seed, 100)
-        r200 = recall_at_k(ranked_list, test_seed, 200)
+        k_list = compute_k_list(cfg, len(test_seed))
 
-        ndcg100 = ndcg_at_k(ranked_list, test_seed, 100)
-        ndcg200 = ndcg_at_k(ranked_list, test_seed, 200)
+        print(f"Test size: {len(test_seed)} | k_list: {k_list}")
 
-        print(f"Recall@100: {r100:.4f} | Recall@200: {r200:.4f}")
-        print(f"nDCG@100: {ndcg100:.4f} | nDCG@200: {ndcg200:.4f}")
+        run_metrics = []
 
-        all_metrics.append([r100, r200, ndcg100, ndcg200])
+        for k in k_list:
+            r = recall_at_k(ranked_list, test_seed, k)
+            ndcg = ndcg_at_k(ranked_list, test_seed, k)
+
+            print(f"Recall@{k}: {r:.4f} | nDCG@{k}: {ndcg:.4f}")
+
+            run_metrics.extend([r, ndcg])
+
+        # tạo header 1 lần (dựa trên run đầu)
+        if not header_written:
+            header = ["Run"]
+            for k in k_list:
+                header += [f"Recall@{k}", f"nDCG@{k}"]
+            header_written = True
+
+        all_metrics.append(run_metrics)
 
     metric_path = os.path.join(run_dir, "metrics.csv")
 
-    avg = [sum(x)/len(x) for x in zip(*all_metrics)]
+    avg = [sum(x) / len(x) for x in zip(*all_metrics)]
 
     with open(metric_path, "w") as f:
         writer = csv.writer(f)
 
-        writer.writerow(["Run", "Recall@100","Recall@200","nDCG@100","nDCG@200"])
+        writer.writerow(header)
 
         for i, row in enumerate(all_metrics):
             writer.writerow([f"result{i}"] + row)
