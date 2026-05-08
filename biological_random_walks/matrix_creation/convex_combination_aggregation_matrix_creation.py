@@ -22,6 +22,7 @@ class ConvexCombinationMatrixAggregationCreation(MatrixAggregation):
 		else:
 			print("No corrected choosen policy", chosen_policy)
 			exit(self.choose_policy_exit)
+			return None
 
 	def run(self, chosen_policy):
 
