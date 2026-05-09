@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 np.float_ = np.float64
-np.int = np.int64
+int = np.int64
 
 import networkx as nx
 
@@ -92,6 +92,8 @@ class Loader():
 		
 		if self.seed_file_path != None:
 			seed_set = self.load_seed_set(self.seed_file_path)
+		else:
+			seed_set = None
 
 		if self.map_gene_ontologies_file_path != None:
 			map__gene__ontologies = self.load_map__gene__ontologies()
@@ -109,12 +111,15 @@ class Loader():
 			secondary_seed_set = None
 
 
-		return PPI, CO_expression, seed_set, secondary_seed_set, map__gene__ontologies, disease_ontology
+		return PPI, CO_expression, seed_set, secondary_seed_set, disease_ontology, map__gene__ontologies
 
 
 	def load_map__gene__ontologies(self):
 		
 		map_gene_ontologies = {}
+		
+		if self.map_gene_ontologies_file_path == None:
+			return None
 		
 		with open(self.map_gene_ontologies_file_path,"r") as fp:
 			csv_reader = csv.reader(fp, delimiter = "\t")
@@ -143,7 +148,10 @@ class Loader():
 
 	def load_disease_ontology(self,):
 		disease_ontology = {}
-
+		
+		if self.disease_ontology_file_path == None:
+			return None
+		
 		with open(self.disease_ontology_file_path, 'r') as fp:
 			csv_reader = csv.reader(fp,delimiter = "\t")
 
