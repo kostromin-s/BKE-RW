@@ -66,5 +66,5 @@ class TopologicalPersonalizationVectorCreation(PersonalizationVectorCreation):
 
 		l_1_personalization_vector = sum(personalization_vector.values())
 
-		personalization_vector = {k:v/l_1_personalization_vector for k,v in personalization_vector.items()}
+		personalization_vector = {k:v/(l_1_personalization_vector+1e-8) for k,v in personalization_vector.items()}
 		return personalization_vector

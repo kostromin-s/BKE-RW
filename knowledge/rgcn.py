@@ -4,48 +4,6 @@ import torch.nn.functional as F
 from torch_geometric.data import Data
 from torch_geometric.nn import RGCNConv
 
-
-def load_kg(path):
-    df = pd.read_csv(path, sep="\t")
-    return df
-
-
-def encode_kg(df):
-    nodes = set(df["head"]).union(set(df["tail"]))
-    node2id = {n: i for i, n in enumerate(nodes)}
-    id2node = {i: n for n, i in node2id.items()}
-
-    rels = df["relation"].unique()
-    rel2id = {r: i for i, r in enumerate(rels)}
-
-    return node2id, id2node, rel2id
-
-
-def build_pyg_data(df, node2id, rel2id):
-    edge_index = []
-    edge_type = []
-
-    for _, row in df.iterrows():
-        u = node2id[row["head"]]
-        v = node2id[row["tail"]]
-        r = rel2id[row["relation"]]
-
-        edge_index.append([u, v])
-        edge_type.append(r)
-
-    edge_index = torch.tensor(edge_index).t().contiguous()
-    edge_type = torch.tensor(edge_type)
-
-    num_nodes = len(node2id)
-
-    x = torch.arange(num_nodes)
-
-    data = Data(x=x, edge_index=edge_index)
-    data.edge_type = edge_type
-
-    return data
-
-
 class RGCN(torch.nn.Module):
     def __init__(self, num_nodes, num_relations, hidden_dim=64, dropout=0.3):
         super().__init__()
@@ -67,147 +25,182 @@ class RGCN(torch.nn.Module):
         x = self.conv2(x, edge_index, edge_type)
         return x
 
+class Preprocessor:
+    def __init__(self, df, hidden_dim = 64, dropout=0.3, nameDataset = "", k=10, epochs=20, lr=0.01, num_neg=5):
+        self.df = df
+        self.hidden_dim = hidden_dim
+        self.nameDataset = nameDataset
+        self.dropout = dropout
+        self.k = k
+        self.epochs = epochs
+        self.lr = lr
+        self.num_neg = num_neg
 
-def train(model, data, epochs=20, lr=0.01, num_neg=5):
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=lr,
-        weight_decay=1e-5  # ✅ L2 regularization
-    )
+    def encode_kg(self, df = None):
+        if df is None:
+            df = self.df
+        nodes = set(df["head"]).union(set(df["tail"]))
+        node2id = {n: i for i, n in enumerate(nodes)}
+        id2node = {i: n for n, i in node2id.items()}
 
-    u, v = data.edge_index
+        rels = df["relation"].unique()
+        rel2id = {r: i for i, r in enumerate(rels)}
 
-    for epoch in range(epochs):
-        model.train()
-        optimizer.zero_grad()
+        return node2id, id2node, rel2id
 
-        out = model(data.x, data.edge_index, data.edge_type)
+    def build_pyg_data(self, df, node2id, rel2id):
+        edge_index = []
+        edge_type = []
 
-        # ===== POSITIVE =====
-        pos_score = (out[u] * out[v]).sum(dim=1)
+        for _, row in df.iterrows():
+            u = node2id[row["head"]]
+            v = node2id[row["tail"]]
+            r = rel2id[row["relation"]]
 
-        # ===== MULTI-NEGATIVE =====
-        neg_v = torch.randint(0, out.size(0), (v.size(0), num_neg))
-        u_expand = u.unsqueeze(1).expand(-1, num_neg)
+            edge_index.append([u, v])
+            edge_type.append(r)
 
-        neg_score = (out[u_expand] * out[neg_v]).sum(dim=2)
+        edge_index = torch.tensor(edge_index).t().contiguous()
+        edge_type = torch.tensor(edge_type)
 
-        # ===== LOSS =====
-        loss_pos = -torch.log(torch.sigmoid(pos_score) + 1e-15).mean()
-        loss_neg = -torch.log(1 - torch.sigmoid(neg_score) + 1e-15).mean()
+        num_nodes = len(node2id)
 
-        loss = loss_pos + loss_neg
+        x = torch.arange(num_nodes)
 
-        loss.backward()
-        optimizer.step()
+        data = Data(x=x, edge_index=edge_index)
+        data.edge_type = edge_type
 
-        print(f"Epoch {epoch} | Loss {loss.item():.4f}")
+        return data
+    
+    def train(self, model, data, epochs=None, lr=None, num_neg=None):
+        if epochs is None:
+            epochs = self.epochs
+        if lr is None:
+            lr = self.lr
+        if num_neg is None:
+            num_neg = self.num_neg
 
-    return model
+        optimizer = torch.optim.adam.Adam(
+            model.parameters(),
+            lr=lr,
+            weight_decay=1e-5  # ✅ L2 regularization
+        )
 
+        u, v = data.edge_index
 
-def get_gene_embeddings(model, data, id2node, df):
-    model.eval()
-    with torch.no_grad():
-        emb = model(data.x, data.edge_index, data.edge_type)
+        for epoch in range(epochs):
+            model.train()
+            optimizer.zero_grad()
 
-    gene_nodes = set(df[df["head_type"] == "Gene"]["head"]) | \
-                 set(df[df["tail_type"] == "Gene"]["tail"])
+            out = model(data.x, data.edge_index, data.edge_type)
 
-    gene_indices = []
-    for i, node in id2node.items():
-        if node in gene_nodes:
-            gene_indices.append(i)
+            # ===== POSITIVE =====
+            pos_score = (out[u] * out[v]).sum(dim=1)
 
-    gene_emb = emb[gene_indices]
-    gene_ids = [id2node[i] for i in gene_indices]
+            # ===== MULTI-NEGATIVE =====
+            neg_v = torch.randint(0, out.size(0), (v.size(0), num_neg))
+            u_expand = u.unsqueeze(1).expand(-1, num_neg)
 
-    return gene_emb, gene_ids
+            neg_score = (out[u_expand] * out[neg_v]).sum(dim=2)
 
-def save_gene_embeddings(gene_emb, gene_ids, out_path="gene_embeddings.tsv"):
-    emb_np = gene_emb.cpu().numpy()
+            # ===== LOSS =====
+            loss_pos = -torch.log(torch.sigmoid(pos_score) + 1e-15).mean()
+            loss_neg = -torch.log(1 - torch.sigmoid(neg_score) + 1e-15).mean()
 
-    df = pd.DataFrame(emb_np)
-    df.insert(0, "gene", gene_ids)
+            loss = loss_pos + loss_neg
 
-    df.to_csv(out_path, sep="\t", index=False)
+            loss.backward()
+            optimizer.step()
 
-def build_similarity(gene_emb):
-    norm_emb = F.normalize(gene_emb)
-    sim = norm_emb @ norm_emb.T
-    return sim
+            print(f"Epoch {epoch} | Loss {loss.item():.4f}")
 
+        return model
 
-def build_weighted_edges(sim, gene_ids, k=10):
-    edges = []
+    def get_gene_embeddings(self, model, data, id2node, df):
+        model.eval()
+        with torch.no_grad():
+            emb = model(data.x, data.edge_index, data.edge_type)
 
-    for i in range(sim.shape[0]):
-        vals, idx = torch.topk(sim[i], k=k+1)
+        gene_nodes = set(df[df["head_type"] == "Gene"]["head"]) | \
+                    set(df[df["tail_type"] == "Gene"]["tail"])
 
-        for j, v in zip(idx[1:], vals[1:]):
-            edges.append((gene_ids[i], gene_ids[j.item()], v.item()))
+        gene_indices = []
+        for i, node in id2node.items():
+            if node in gene_nodes:
+                gene_indices.append(i)
 
-    return edges
+        gene_emb = emb[gene_indices]
+        gene_ids = [id2node[i] for i in gene_indices]
 
+        return gene_emb, gene_ids
+        
 
-def main():
-    kg_path = "KGs/kg.csv"
+    def save_gene_embeddings(self, gene_emb, gene_ids, nameDataset=""):
+        if nameDataset == "":
+            out_path = "gene_embeddings/default_gene_embeddings.tsv"
+        else:
+            out_path = f"gene_embeddings/{nameDataset}_gene_embeddings.tsv"
+        emb_np = gene_emb.cpu().numpy()
 
-    print("Loading KG...")
-    df = load_kg(kg_path)
+        df = pd.DataFrame(emb_np)
+        df.insert(0, "gene", gene_ids)
 
-    print("Encoding...")
-    node2id, id2node, rel2id = encode_kg(df)
+        df.to_csv(out_path, sep="\t", index=False)
+    
+    def build_similarity(self, gene_emb):
+        norm_emb = F.normalize(gene_emb)
+        sim = norm_emb @ norm_emb.T
+        return sim
+        
+    def build_weighted_edges(self, sim, gene_ids, k=10):
+        edges = []
 
-    print("Building graph...")
-    data = build_pyg_data(df, node2id, rel2id)
+        for i in range(sim.shape[0]):
+            vals, idx = torch.topk(sim[i], k=k+1)
 
-    print("Training R-GCN...")
-    model = RGCN(
-        num_nodes=data.num_nodes,
-        num_relations=len(rel2id),
-        hidden_dim=64,
-        dropout=0.3   # ✅ dễ tune
-    )
+            for j, v in zip(idx[1:], vals[1:]):
+                edges.append((gene_ids[i], gene_ids[j.item()], v.item()))
 
-    # ===== BEFORE TRAIN =====
-    model.eval()
-    with torch.no_grad():
-        emb_before = model(data.x, data.edge_index, data.edge_type)
+        return edges
+    
+    def run(self):
+        
+        print("================Dataset:", self.nameDataset if self.nameDataset else "Default" ,"================")
+        node2id, id2node, rel2id = self.encode_kg()
+        data = self.build_pyg_data(self.df, node2id, rel2id)
 
-    print("Before training mean/std:",
-          emb_before.mean().item(), emb_before.std().item())
+        model = RGCN(
+            num_nodes=data.num_nodes,
+            num_relations=len(rel2id),
+            hidden_dim=64,
+            dropout=0.3   # ✅ dễ tune
+        )
 
-    # ===== TRAIN =====
-    model = train(
-        model,
-        data,
-        epochs=10,
-        lr=0.01,
-        num_neg=5   # ✅ multi-negative
-    )
+        model.eval()
+        with torch.no_grad():
+            emb_before = model(data.x, data.edge_index, data.edge_type)
+        
+        print("Before training mean/std:", emb_before.mean().item(), emb_before.std().item())
 
-    print("Extract gene embeddings...")
-    gene_emb, gene_ids = get_gene_embeddings(model, data, id2node, df)
+        model = self.train(model, data)
 
-    print("Saving gene embeddings...")
-    save_gene_embeddings(gene_emb, gene_ids, "gene_embeddings.tsv")
+        print("Extract gene embeddings...")
+        gene_emb, gene_ids = self.get_gene_embeddings(model, data, id2node, self.df)
 
-    print("After training mean/std:",
-          gene_emb.mean().item(), gene_emb.std().item())
+        print("Saving gene embeddings...")
+        self.save_gene_embeddings(gene_emb, gene_ids, self.nameDataset)
 
-    print("Compute similarity...")
-    sim = build_similarity(gene_emb)
+        print("After training mean/std:",
+            gene_emb.mean().item(), gene_emb.std().item())
 
-    print("Build weighted network...")
-    edges = build_weighted_edges(sim, gene_ids, k=10)
+        print("Compute similarity...")
+        sim = self.build_similarity(gene_emb)
 
-    print("Saving...")
-    out_df = pd.DataFrame(edges, columns=["u", "v", "weight"])
-    out_df.to_csv("gene_similarity_network.csv", sep="\t", index=False)
+        print("Build weighted network...")
+        edges = self.build_weighted_edges(sim, gene_ids, k=10)
 
-    print("DONE 🚀")
+        print("Saving...")
+        out_df = pd.DataFrame(edges, columns=["u", "v", "weight"])
+        out_df.to_csv(f"matrix_gene_sim/{self.nameDataset}_gene_similarity.csv", sep="\t", index=False)
 
-
-if __name__ == "__main__":
-    main()
+        print("DONE 🚀")

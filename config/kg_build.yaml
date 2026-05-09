@@ -1,5 +1,6 @@
 defaults:
   - _self_
+  - experiment: coad
 
 data:
   gene_term: ../data_set/ontology_network/ontology_network.tsv

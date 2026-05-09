@@ -65,7 +65,7 @@ class BiologicalRandomWalks():
 			disease_ontology_file_path = disease_ontology_file_path,
 			map_gene_ontologies_file_path = map__gene__ontologies_file_path)
 		
-		PPI, CO_expression, seed_set, secondary_seed_set, map__gene__ontologies, disease_ontology = self.file_loader_step.run()
+		PPI, CO_expression, seed_set, secondary_seed_set, disease_ontology, map__gene__ontologies = self.file_loader_step.run()
 		seed_set = self.seed_set_override if self.seed_set_override is not None else seed_set
 		print("Loading Time:", time.perf_counter() - t0)
 		print()		
@@ -82,6 +82,9 @@ class BiologicalRandomWalks():
 		
 		t0 = time.perf_counter()
 		print("Computing aggragation with policy:", matrix_aggregation_policy,"....")
+		if CO_expression is None and matrix_aggregation_policy == "convex_combination":
+			print("CO-expression network not provided, switching to only_ppi_network policy for matrix aggregation")
+			matrix_aggregation_policy = "only_ppi_network"
 		G, V = self.compute_matrix_aggregation(PPI, CO_expression, matrix_aggregation_policy)
 		
 		print("Time for computing Aggregation Matrix:", time.perf_counter() - t0)
@@ -217,8 +220,14 @@ class BiologicalRandomWalks():
 
 		elif matrix_aggregation_policy == "only_co_expression_network":
 
+			if CO_expression_network is None:
+				raise ValueError("CO_expression_network is required for only_co_expression_network policy")
+
 			V = set(CO_expression_network.nodes())
 			return CO_expression_network, V
+		print("Unknown matrix aggregation policy:", matrix_aggregation_policy)
+		
+		return None, None
 
 
 	def save_ranked_list(self, file_path):
