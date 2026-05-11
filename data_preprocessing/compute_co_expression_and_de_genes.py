@@ -155,11 +155,12 @@ if __name__ == '__main__':
 	parser.add_argument('-f',default = "../data_set/ppi_network/HIPPIE_node_list.txt")
 	parser.add_argument('-de',default = None)
 	parser.add_argument('-co',default = None)
-
+	parser.add_argument('-th_co',default = 0.7, type = float)
+	parser.add_argument('-th_de',default = 2.5, type = float)
 	args = parser.parse_args()
 
-	get_top_correlations(args.T, args.co,args.f)
-	create_de_genes(args.T,args.C,args.de,2.5,args.f)
+	get_top_correlations(args.T, args.co,args.f,args.th_co)
+	create_de_genes(args.T,args.C,args.de,args.th_de,args.f)
 
 
 
