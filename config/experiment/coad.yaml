@@ -4,3 +4,4 @@ de: data_set/differentially_expressed_genes/TCGA-COAD_de_genes.tsv
 coexpr: data_set/co-expression_networks/TCGA-COAD__co_expression__t_70%.tsv
 disease_ontology: data_set/disease_specific_ontologies/TCGA-COAD_disease_ontologies.txt
 kg: knowledge/KGs/COAD_kg.tsv
+gene_embedding: knowledge/gene_embeddings/COAD_gene_embeddings.tsv
