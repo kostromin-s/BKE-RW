@@ -3,6 +3,8 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.data import Data
 from torch_geometric.nn import RGCNConv
+from torch.optim import Adam
+
 
 class RGCN(torch.nn.Module):
     def __init__(self, num_nodes, num_relations, hidden_dim=64, dropout=0.3):
@@ -80,7 +82,7 @@ class Preprocessor:
         if num_neg is None:
             num_neg = self.num_neg
 
-        optimizer = torch.optim.adam.Adam(
+        optimizer = Adam(
             model.parameters(),
             lr=lr,
             weight_decay=1e-5  # ✅ L2 regularization
@@ -137,9 +139,9 @@ class Preprocessor:
 
     def save_gene_embeddings(self, gene_emb, gene_ids, nameDataset=""):
         if nameDataset == "":
-            out_path = "gene_embeddings/default_gene_embeddings.tsv"
+            out_path = "knowledge/gene_embeddings/default_gene_embeddings.tsv"
         else:
-            out_path = f"gene_embeddings/{nameDataset}_gene_embeddings.tsv"
+            out_path = f"knowledge/gene_embeddings/{nameDataset}_gene_embeddings.tsv"
         emb_np = gene_emb.cpu().numpy()
 
         df = pd.DataFrame(emb_np)
@@ -201,6 +203,6 @@ class Preprocessor:
 
         print("Saving...")
         out_df = pd.DataFrame(edges, columns=["u", "v", "weight"])
-        out_df.to_csv(f"matrix_gene_sim/{self.nameDataset}_gene_similarity.csv", sep="\t", index=False)
+        out_df.to_csv(f"knowledge/matrix_gene_sim/{self.nameDataset}_gene_similarity.csv", sep="\t", index=False)
 
         print("DONE 🚀")
