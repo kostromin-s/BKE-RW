@@ -14,8 +14,8 @@ class DiseaseOntologies():
 
 		self.ontology_graph_file_path = ontology_graph_file_path
 
-		self.p_value_threshold = 0.05
-
+		self.p_value_threshold = 1e-5
+# 0.05
 	def __load_ontology_graph__(self,):
 
 		self.map__db__gene_id__term_ids = {}
