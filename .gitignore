@@ -191,3 +191,9 @@ multirun
 data_set_news
 
 filter_seed_gene.ipynb
+
+*.md
+
+checkData.ipynb
+
+manifest_redownload.txt

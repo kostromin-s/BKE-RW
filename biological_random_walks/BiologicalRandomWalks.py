@@ -1,6 +1,5 @@
 from biological_random_walks.loader.loader import Loader
 
-
 from biological_random_walks.graph_weight_computation.PPI_graph_weight_computation import ComputePPIGraphWeight
 
 from biological_random_walks.matrix_creation.convex_combination_aggregation_matrix_creation import ConvexCombinationMatrixAggregationCreation
@@ -10,13 +9,16 @@ from biological_random_walks.personalization_vector_creation.biological_personal
 from biological_random_walks.personalization_vector_creation.topological_personalization_vector_creation import TopologicalPersonalizationVectorCreation
 from biological_random_walks.personalization_vector_creation.embedding_personalization_vector_creation import EmbeddingPersonalizationVectorCreation
 
-
 from biological_random_walks.personalization_vector_aggregation.p_v_aggregation import PersonalizationVectorAggregation
 
 from biological_random_walks.core.page_rank_core import RandomWalkWithRestartCore
 
 import time
 import csv
+import logging
+
+log = logging.getLogger(__name__)
+log.info("training started")
 
 class BiologicalRandomWalks():
 	
@@ -69,6 +71,13 @@ class BiologicalRandomWalks():
 		seed_set = self.seed_set_override if self.seed_set_override is not None else seed_set
 		print("Loading Time:", time.perf_counter() - t0)
 		print()		
+		# Kiểm tra nội dung của các đầu ra sau khi load
+		if secondary_seed_set is None:
+			log.warning("secondary_seed_set is None")
+			# Xóa topological khỏi personalization_vector_creation_policies nếu secondary_seed_set không được cung cấp
+			if "topological" in personalization_vector_creation_policies:
+				personalization_vector_creation_policies.remove("topological")
+				log.warning("Đã xóa 'topological' khỏi personalization_vector_creation_policies do thiếu data set này không có DE")
 
 		if network_weight_flag:
 			t0 = time.perf_counter()
