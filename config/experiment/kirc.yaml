@@ -1,0 +1,7 @@
+name: kirc
+seed: data_set/seed_set/TCGA-KIRC_seed.txt
+de: data_set/differentially_expressed_genes/TCGA-KIRC_de_genes.tsv
+coexpr: data_set/co-expression_networks/TCGA-KIRC__co_expression__t_70%.tsv
+disease_ontology: data_set/disease_specific_ontologies/TCGA-KIRC_disease_ontologies.txt
+kg: knowledge/KGs/KIRC_kg.tsv
+gene_embedding: knowledge/gene_embeddings/KIRC_gene_embeddings.tsv
