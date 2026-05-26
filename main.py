@@ -87,11 +87,16 @@ def main(cfg: DictConfig):
 
         output_path = os.path.join(run_dir, f"result{i}.txt")
 
-        if cfg.method == "gene_sim":
+        if cfg.method == "gene_sim1" or cfg.method == "gene_sim2":
+
+            gene_similarity_file_path = cfg.paths.gene_similarity
+            
+            if cfg.method == "gene_sim2":
+                gene_similarity_file_path = cfg.experiment.matric_similarity
 
             brw = BiologicalRandomWalksWithGeneSim(
 
-                gene_similarity_file_path=cfg.paths.gene_similarity,
+                gene_similarity_file_path=gene_similarity_file_path,
 
                 seed_file_path=cfg.experiment.seed,
                 seed_set_override=train_seed,
