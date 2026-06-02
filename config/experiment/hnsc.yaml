@@ -5,4 +5,4 @@ coexpr: data_set/co-expression_networks/TCGA-HNSC__co_expression__t_70%.tsv
 disease_ontology: data_set/disease_specific_ontologies/TCGA-HNSC_disease_ontologies.txt
 kg: knowledge/KGs/HNSC_kg.tsv
 gene_embedding: knowledge/gene_embeddings/HNSC_gene_embeddings.tsv
-matric_similarity: knowledge/matrix_gene_sim/HNSC_gene_similarity.csv
+matrix_similarity: knowledge/matrix_gene_sim/HNSC_gene_similarity.csv

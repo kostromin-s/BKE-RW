@@ -5,3 +5,4 @@ coexpr: data_set/co-expression_networks/TCGA-LUAD__co_expression__t_70%.tsv
 disease_ontology: data_set/disease_specific_ontologies/TCGA-LUAD_disease_ontologies.txt
 kg: knowledge/KGs/LUAD_kg.tsv
 gene_embedding: knowledge/gene_embeddings/LUAD_gene_embeddings.tsv
+matrix_similarity: knowledge/matrix_gene_sim/LUAD_gene_similarity.csv

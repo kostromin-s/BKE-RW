@@ -14,14 +14,14 @@ class BiologicalRandomWalksWithGeneSim(BiologicalRandomWalks):
 
         super().__init__(*args, **kwargs)
 
-    def compute_matrix_aggregation(self, PPI_network, CO_expression_network, matrix_aggregation_policy = "convex_combination"):
+    def compute_matrix_aggregation(self, PPI_network, CO_expression_network, matrix_aggregation_policy = "convex_combination", c = 1):
         matrix_similarity_network = self.load_gene_similarity_network()
         # Cập nhật trọng số của PPI_network theo matrix_similarity_network
         for u, v, data in PPI_network.edges(data=True):
             if matrix_similarity_network.has_edge(u, v):
-                data['weight'] = matrix_similarity_network[u][v]['weight']
+                data['weight'] = c + matrix_similarity_network[u][v]['weight']
             else:
-                data['weight'] = 0.0
+                data['weight'] = c
         
         return super().compute_matrix_aggregation(PPI_network, CO_expression_network, matrix_aggregation_policy)
 

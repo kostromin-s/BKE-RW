@@ -1,6 +1,7 @@
 defaults:
   - _self_
   - experiment: brca
+  - override hydra/launcher: joblib
 
 method: original
 
@@ -8,7 +9,6 @@ paths:
   ppi: data_set/ppi_network/HIPPIE.tsv
   ontology_network: data_set/ontology_network/ontology_network.tsv
   gene_similarity: knowledge/gene_similarity_network(1).csv
-  # gene_similarity: knowledge/matrix_gene_sim/COAD_gene_similarity.csv
 
 params:
   restart_prob: 0.9
@@ -24,3 +24,15 @@ evaluation:
   dynamic:
     c_values: [8, 16]
     k_max: 1500
+
+hydra:
+  run:
+    dir: outputs/${experiment.name}/${method}/${evaluation.mode}/rp_${params.restart_prob}/beta_${params.beta}/alpha_${params.alpha}
+
+  sweep:
+    dir: outputs
+    subdir: ${experiment.name}/${method}/${evaluation.mode}/rp_${params.restart_prob}/beta_${params.beta}/alpha_${params.alpha}
+
+  launcher:
+    _target_: hydra_plugins.hydra_joblib_launcher.joblib_launcher.JoblibLauncher
+    n_jobs: 6

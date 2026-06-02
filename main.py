@@ -92,7 +92,7 @@ def main(cfg: DictConfig):
             gene_similarity_file_path = cfg.paths.gene_similarity
             
             if cfg.method == "gene_sim2":
-                gene_similarity_file_path = cfg.experiment.matric_similarity
+                gene_similarity_file_path = cfg.experiment.matrix_similarity
 
             brw = BiologicalRandomWalksWithGeneSim(
 
@@ -144,8 +144,13 @@ def main(cfg: DictConfig):
 
         ranked_list = brw.ranked_list
 
-        # (giữ nguyên logic gốc: KHÔNG loại train_seed)
-        # ranked_list = [(g, s) for g, s in brw.ranked_list if g not in train_seed]
+        # Lưu dữ liệu train và test seed cho run này
+        with open(os.path.join(run_dir, f"train_seed_{i}.txt"), "w") as f:
+            for gene in train_seed:
+                f.write(gene + "\n")
+        with open(os.path.join(run_dir, f"test_seed_{i}.txt"), "w") as f:
+            for gene in test_seed:
+                f.write(gene + "\n")
 
         k_list = compute_k_list(cfg, len(test_seed))
 

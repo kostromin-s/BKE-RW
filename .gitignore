@@ -197,3 +197,7 @@ filter_seed_gene.ipynb
 checkData.ipynb
 
 manifest_redownload.txt
+
+*.ipynb
+*.sh
+*.xlsx

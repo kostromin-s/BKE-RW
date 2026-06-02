@@ -5,4 +5,4 @@ coexpr: data_set/co-expression_networks/TCGA-KIRC__co_expression__t_70%.tsv
 disease_ontology: data_set/disease_specific_ontologies/TCGA-KIRC_disease_ontologies.txt
 kg: knowledge/KGs/KIRC_kg.tsv
 gene_embedding: knowledge/gene_embeddings/KIRC_gene_embeddings.tsv
-matric_similarity: knowledge/matrix_gene_sim/KIRC_gene_similarity.csv
+matrix_similarity: knowledge/matrix_gene_sim/KIRC_gene_similarity.csv
