@@ -266,11 +266,11 @@ class PreprocessPage(ttk.Frame):
     """
 
     STEP_DEFS = [
+        ("seed_set", "run_seed_set"),
         ("TCGA_analyzer", "run_tcga_analyzer"),
         ("Co-expression va Differentially_expressed", "run_co_expression"),
         ("disease_specific_ontologies", "run_disease_ontology"),
-        ("seed_set", None),
-        ("buildSimilarityMatrix", None),
+        ("buildSimilarityMatrix", "run_build_similarity_matrix"),
     ]
 
     def __init__(self, parent, controller):
@@ -287,9 +287,11 @@ class PreprocessPage(ttk.Frame):
         steps_frame.pack(pady=4)
 
         handlers = {
+            "run_seed_set": self.run_seed_set,
             "run_tcga_analyzer": self.run_tcga_analyzer,
             "run_co_expression": self.run_co_expression,
             "run_disease_ontology": self.run_disease_ontology,
+            "run_build_similarity_matrix": self.run_build_similarity_matrix,
         }
 
         for i, (label, handler_name) in enumerate(self.STEP_DEFS, start=1):
@@ -309,7 +311,7 @@ class PreprocessPage(ttk.Frame):
         ttk.Label(dataset_frame, text="Dataset:", style="Body.TLabel").grid(row=0, column=0, padx=(0, 8))
 
         self.dataset_var = tk.StringVar()
-        datasets = ["TCGA-CHOL", "TCGA-BRCA", "TCGA-LUAD", "TCGA-LIHC"]
+        datasets = ["TCGA-CHOL", "TCGA-HNSC", "TCGA-ESCA", "TCGA-LIHC", "TCGA-KIRC", "TCGA-THCA", "TCGA-STAD", "TCGA-COAD", "TCGA-KICH"]
         self.dataset_combo = ttk.Combobox(
             dataset_frame, textvariable=self.dataset_var, values=datasets,
             width=22, state="readonly"
@@ -379,6 +381,44 @@ class PreprocessPage(ttk.Frame):
             ["-gdc", p["gdc"], "-m", p["manifest"], "-rna_dir", p["rna_dir"], "-o", p["output_dir"]],
         )
 
+    def run_seed_set(self):
+        if self._is_running:
+            return
+
+        dataset = self.dataset_var.get()
+        cancer = dataset.replace("TCGA-", "")
+
+        self._set_running(True, "Đang tạo seed gene...")
+
+        def worker():
+            script = os.path.join(BASE_DIR, "generate_seed.py")
+
+            cmd = [
+                sys.executable,
+                script,
+                "--cancer",
+                cancer,
+                "--threshold",
+                "1",
+            ]
+
+            try:
+                result = subprocess.run(
+                    cmd,
+                    cwd=BASE_DIR,
+                    capture_output=True,
+                    text=True,
+                )
+                success = result.returncode == 0
+                output_log = (result.stdout or "") + "\n" + (result.stderr or "")
+            except Exception as e:
+                success = False
+                output_log = str(e)
+
+            self.after(0, self._on_step_finished, success, output_log)
+
+        threading.Thread(target=worker, daemon=True).start()
+
     def run_co_expression(self):
         dataset = self.dataset_var.get()
         p = build_dataset_paths(dataset)
@@ -397,6 +437,44 @@ class PreprocessPage(ttk.Frame):
             ["-s", p["seed"], "-a", p["ontology"], "-o", p["disease"]],
         )
 
+    def run_build_similarity_matrix(self):
+        if self._is_running:
+            return
+
+        dataset = self.dataset_var.get()
+        cancer = dataset.replace("TCGA-", "")
+
+        self._set_running(True, "Đang xây dựng Gene Similarity Matrix...")
+
+        def worker():
+            script = os.path.join(BASE_DIR, "buildMatrixGeneSim.py")
+
+            cmd = [
+                sys.executable,
+                script,
+                "mode=3",
+                f"experiment.name={cancer}",
+            ]
+
+            try:
+                result = subprocess.run(
+                    cmd,
+                    cwd=BASE_DIR,
+                    capture_output=True,
+                    text=True,
+                )
+
+                success = result.returncode == 0
+                output_log = (result.stdout or "") + "\n" + (result.stderr or "")
+
+            except Exception as e:
+                success = False
+                output_log = str(e)
+
+            self.after(0, self._on_step_finished, success, output_log)
+
+        threading.Thread(target=worker, daemon=True).start()
+        
     def not_implemented(self, step_name):
         messagebox.showinfo(
             "Chua trien khai",

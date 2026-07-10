@@ -201,3 +201,5 @@ manifest_redownload.txt
 *.ipynb
 *.sh
 *.xlsx
+
+knowledgex
