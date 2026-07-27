@@ -1,18 +1,20 @@
 """
-demo.py - Giao dien cua so cho BKERW Toolkit.
+demo.py - GUI window for the BKERW Toolkit.
 
-Co 2 che do:
-  1) Tien xu ly du lieu   -> TCGA_analyzer, Co-expression, disease_specific_ontologies
-                              da noi voi script that (chay nen, khong lam dong giao dien).
-                              seed_set, buildSimilarityMatrix con "chua trien khai".
-  2) Chay thuat toan       -> chi co BKERW, nguoi dung chon/nhap ten Experiment,
-                               thuat toan tu doc phan con lai tu config (Hydra)
+Two modes are available:
+  1) Data preprocessing -> TCGA_analyzer, Co-expression, disease_specific_ontologies
+                            are wired to the real scripts (run in the background,
+                            without freezing the UI). seed_set and
+                            buildSimilarityMatrix are still "not implemented".
+  2) Run algorithm       -> BKERW only; the user selects/enters an Experiment name,
+                            the algorithm reads the remaining parameters from
+                            config (Hydra).
 
-Cach chay:
+How to run:
     python demo.py
 
-Yeu cau: Python 3.8+, tkinter (co san trong Python chuan), file demo.py (Hydra)
-nam cung thu muc voi demo.py.
+Requirements: Python 3.8+, tkinter (bundled with standard Python), the demo.py
+(Hydra) file located in the same directory as demo.py.
 """
 
 import os
@@ -24,24 +26,24 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 # ----------------------------------------------------------------------------
-# Cau hinh duong dan (GIU NGUYEN - khong doi bat ky gia tri nao o day)
+# Path configuration (KEEP AS IS - do not change any value here)
 # ----------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MAIN_SCRIPT = os.path.join(BASE_DIR, "demo.py")                       # script Hydra chay thuat toan
-EXPERIMENT_CONFIG_DIR = os.path.join(BASE_DIR, "config", "experiment")  # noi chua config tung experiment
+MAIN_SCRIPT = os.path.join(BASE_DIR, "demo.py")                       # Hydra script that runs the algorithm
+EXPERIMENT_CONFIG_DIR = os.path.join(BASE_DIR, "config", "experiment")  # holds the per-experiment configs
 
-# Method dung cho BKERW (ban goc, khong dung gene similarity).
-# Neu cau truc config cua ban khac, chinh lai gia tri nay.
+# Method used for BKERW (original version, without gene similarity).
+# If your config structure differs, adjust this value accordingly.
 BKERW_METHOD_VALUE = "experimental_gs"
 PREPROCESS_DIR = os.path.join(BASE_DIR, "data_preprocessing")
 
 # ----------------------------------------------------------------------------
-# Bang mau giao dien
+# UI color palette
 # ----------------------------------------------------------------------------
 COLOR_BG = "#f4f7f9"
-COLOR_PRIMARY = "#0f766e"      # teal - mau chinh (khoa hoc/sinh hoc)
+COLOR_PRIMARY = "#0f766e"      # teal - primary color (science/biology)
 COLOR_PRIMARY_DARK = "#0b5a54"
-COLOR_ACCENT = "#0ea5e9"       # xanh duong - nut phu
+COLOR_ACCENT = "#0ea5e9"       # blue - secondary buttons
 COLOR_TEXT = "#1e293b"
 COLOR_MUTED = "#64748b"
 COLOR_SUCCESS = "#15803d"
@@ -51,7 +53,7 @@ COLOR_BORDER = "#dbe3e8"
 
 
 def get_available_experiments():
-    """Quet thu muc config/experiment de lay danh sach ten experiment co san (*.yaml)."""
+    """Scan the config/experiment folder to list the available experiment names (*.yaml)."""
     if not os.path.isdir(EXPERIMENT_CONFIG_DIR):
         return []
     files = glob.glob(os.path.join(EXPERIMENT_CONFIG_DIR, "*.yaml"))
@@ -59,9 +61,10 @@ def get_available_experiments():
 
 
 # ----------------------------------------------------------------------------
-# Cac ham tien xu ly dung chung
-# (Chuyen ra cap module vi khong dung `self` - day la nguyen nhan gay
-#  NameError trong ban goc khi chung bi dat thut vao trong class ma thieu self)
+# Shared preprocessing helper functions
+# (Moved to module level since they don't use `self` - this was the cause of
+#  a NameError in the original version when they were indented inside a class
+#  but missing self.)
 # ----------------------------------------------------------------------------
 def run_preprocessing(script_name, args):
     script = os.path.join(PREPROCESS_DIR, script_name)
@@ -138,7 +141,7 @@ DEFAULT_PARAMS = {
     "beta": 0.5,
 }
 # ----------------------------------------------------------------------------
-# Thiet lap style dung chung
+# Shared style setup
 # ----------------------------------------------------------------------------
 def setup_style(root):
     style = ttk.Style(root)
@@ -192,7 +195,7 @@ def setup_style(root):
 
 
 # ----------------------------------------------------------------------------
-# Ung dung chinh (dieu huong nhieu trang tren cung 1 cua so)
+# Main application (multi-page navigation within a single window)
 # ----------------------------------------------------------------------------
 class App(tk.Tk):
     def __init__(self):
@@ -237,7 +240,7 @@ class HomePage(ttk.Frame):
         ttk.Label(self, text="🧬 BKERW Toolkit", style="Title.TLabel").pack(pady=(60, 6))
         ttk.Label(
             self,
-            text="Biological Knowledge Embedding + Random Walk\nCong cu ho tro nghien cuu",
+            text="Biological Knowledge Embedding + Random Walk\nResearch support tool",
             style="Subtitle.TLabel", justify="center"
         ).pack(pady=(0, 40))
 
@@ -245,32 +248,31 @@ class HomePage(ttk.Frame):
         card.pack()
 
         ttk.Button(
-            card, text="🧪   Tien xu ly du lieu", width=34, style="Primary.TButton",
+            card, text="Data Preprocessing Module", width=34, style="Primary.TButton",
             command=lambda: controller.show_frame(PreprocessPage)
         ).pack(pady=8, ipady=4)
 
         ttk.Button(
-            card, text="⚙️   Chay thuat toan (BKERW)", width=34, style="Primary.TButton",
+            card, text="BKERW Execution Module", width=34, style="Primary.TButton",
             command=lambda: controller.show_frame(AlgorithmPage)
         ).pack(pady=8, ipady=4)
 
-        ttk.Label(self, text="HUST · Do an tot nghiep", style="Muted.TLabel").pack(side="bottom", pady=20)
-
 
 class PreprocessPage(ttk.Frame):
-    """Giao dien tien xu ly du lieu.
+    """Data preprocessing page.
 
-    3 buoc dau (TCGA_analyzer, Co-expression, disease_specific_ontologies) da
-    noi voi script that va CHAY NEN (khong lam dong giao dien). 2 buoc con lai
-    (seed_set, buildSimilarityMatrix) chua co code xu ly.
+    The first 3 steps (TCGA_analyzer, Co-expression, disease_specific_ontologies)
+    are wired to the real scripts and RUN IN THE BACKGROUND (without freezing the
+    UI). The remaining 2 steps (seed_set, buildSimilarityMatrix) don't have
+    processing code yet.
     """
 
     STEP_DEFS = [
-        ("seed_set", "run_seed_set"),
-        ("TCGA_analyzer", "run_tcga_analyzer"),
-        ("Co-expression va Differentially_expressed", "run_co_expression"),
-        ("disease_specific_ontologies", "run_disease_ontology"),
-        ("buildSimilarityMatrix", "run_build_similarity_matrix"),
+        ("Seed Gene Selection", "run_seed_set"),
+        ("TCGA Data Processing", "run_tcga_analyzer"),
+        ("Co-expression and Differentially_expressed", "run_co_expression"),
+        ("Disease-Specific Ontology Construction", "run_disease_ontology"),
+        ("Gene Similarity Matrix Construction", "run_build_similarity_matrix"),
     ]
 
     def __init__(self, parent, controller):
@@ -279,8 +281,8 @@ class PreprocessPage(ttk.Frame):
         self.step_buttons = []
         self._is_running = False
 
-        ttk.Label(self, text="Tien xu ly du lieu", style="Heading.TLabel").pack(pady=(24, 4))
-        ttk.Label(self, text="Chon dataset roi chay tung buoc theo thu tu",
+        ttk.Label(self, text="Data Preprocessing", style="Heading.TLabel").pack(pady=(24, 4))
+        ttk.Label(self, text="Select a dataset, then run each step in order",
                    style="Muted.TLabel").pack(pady=(0, 16))
 
         steps_frame = ttk.Frame(self, style="TFrame")
@@ -320,13 +322,13 @@ class PreprocessPage(ttk.Frame):
         self.dataset_combo.current(0)
 
         self.progress = ttk.Progressbar(self, mode="indeterminate", length=380)
-        self.status_var = tk.StringVar(value="San sang.")
+        self.status_var = tk.StringVar(value="Ready.")
         self.status_label = ttk.Label(self, textvariable=self.status_var, style="Status.TLabel")
         self.status_label.pack(pady=(18, 4))
         self.progress.pack(pady=(0, 10))
-        self.progress.pack_forget()  # an cho den khi co tien trinh chay
+        self.progress.pack_forget()  # hidden until a step is running
 
-        ttk.Button(self, text="←  Quay lai", style="Ghost.TButton",
+        ttk.Button(self, text="←  Back", style="Ghost.TButton",
                    command=lambda: controller.show_frame(HomePage)).pack(pady=10)
 
     # -- helpers --------------------------------------------------------
@@ -337,7 +339,7 @@ class PreprocessPage(ttk.Frame):
             btn.config(state=state)
         if running:
             self.status_label.config(style="Status.TLabel")
-            self.status_var.set(message or "Dang xu ly...")
+            self.status_var.set(message or "Processing...")
             self.progress.pack(pady=(0, 10))
             self.progress.start(12)
         else:
@@ -347,7 +349,7 @@ class PreprocessPage(ttk.Frame):
     def _run_step_async(self, target, *args):
         if self._is_running:
             return
-        self._set_running(True, "Dang chay, vui long doi...")
+        self._set_running(True, "Running, please wait...")
         threading.Thread(target=self._worker, args=(target, args), daemon=True).start()
 
     def _worker(self, target, args):
@@ -364,14 +366,14 @@ class PreprocessPage(ttk.Frame):
         self._set_running(False)
         if success:
             self.status_label.config(style="Success.TLabel")
-            self.status_var.set("Hoan thanh.")
-            messagebox.showinfo("OK", "Hoan thanh.")
+            self.status_var.set("Done.")
+            messagebox.showinfo("OK", "Done.")
         else:
             self.status_label.config(style="Error.TLabel")
-            self.status_var.set("Co loi xay ra.")
-            messagebox.showerror("Loi", err or "Khong ro loi.")
+            self.status_var.set("An error occurred.")
+            messagebox.showerror("Error", err or "Unknown error.")
 
-    # -- cac buoc xu ly ---------------------------------------------------
+    # -- processing steps ---------------------------------------------------
     def run_tcga_analyzer(self):
         dataset = self.dataset_var.get()
         p = build_dataset_paths(dataset)
@@ -388,7 +390,7 @@ class PreprocessPage(ttk.Frame):
         dataset = self.dataset_var.get()
         cancer = dataset.replace("TCGA-", "")
 
-        self._set_running(True, "Đang tạo seed gene...")
+        self._set_running(True, "Generating seed genes...")
 
         def worker():
             script = os.path.join(BASE_DIR, "generate_seed.py")
@@ -444,7 +446,7 @@ class PreprocessPage(ttk.Frame):
         dataset = self.dataset_var.get()
         cancer = dataset.replace("TCGA-", "")
 
-        self._set_running(True, "Đang xây dựng Gene Similarity Matrix...")
+        self._set_running(True, "Building Gene Similarity Matrix...")
 
         def worker():
             script = os.path.join(BASE_DIR, "buildMatrixGeneSim.py")
@@ -474,27 +476,28 @@ class PreprocessPage(ttk.Frame):
             self.after(0, self._on_step_finished, success, output_log)
 
         threading.Thread(target=worker, daemon=True).start()
-        
+
     def not_implemented(self, step_name):
         messagebox.showinfo(
-            "Chua trien khai",
-            f"Chuc nang '{step_name}' chua duoc nhung code xu ly.\n"
-            "Hay bo sung logic sau."
+            "Not Implemented",
+            f"The '{step_name}' function has not been implemented yet.\n"
+            "Please add the processing logic later."
         )
 
 
 class AlgorithmPage(ttk.Frame):
-    """Giao dien chay thuat toan BKERW.
-    Nguoi dung chi can chon/nhap ten Experiment; cac tham so con lai
-    (ppi, co-expression, disease ontology, restart_prob, alpha, beta, k_list...)
-    duoc thuat toan tu doc tu config Hydra (config/experiment/<name>.yaml,
-    config/paths, config/params, config/evaluation...).
+    """BKERW algorithm run page.
+    The user only needs to select/enter an Experiment name; the remaining
+    parameters (ppi, co-expression, disease ontology, restart_prob, alpha,
+    beta, k_list...) are automatically read by the algorithm from the Hydra
+    config (config/experiment/<name>.yaml, config/paths, config/params,
+    config/evaluation...).
     """
 
     def __init__(self, parent, controller):
         super().__init__(parent, style="TFrame")
 
-        ttk.Label(self, text="Chay thuat toan BKERW", style="Heading.TLabel").pack(pady=(28, 16))
+        ttk.Label(self, text="Run BKERW Algorithm", style="Heading.TLabel").pack(pady=(28, 16))
 
         form = ttk.Frame(self, style="TFrame")
         form.pack(pady=6)
@@ -507,26 +510,26 @@ class AlgorithmPage(ttk.Frame):
 
         ttk.Label(
             form,
-            text="(Chon tu danh sach co san, hoac go truc tiep ten experiment moi)",
+            text="(Select from the available list, or type a new experiment name directly)",
             style="Muted.TLabel"
         ).grid(row=1, column=0, columnspan=2, sticky="w", padx=6)
 
         self.progress = ttk.Progressbar(self, mode="indeterminate", length=380)
-        self.status_var = tk.StringVar(value="San sang.")
+        self.status_var = tk.StringVar(value="Ready.")
         self.status_label = ttk.Label(self, textvariable=self.status_var, style="Status.TLabel")
         self.status_label.pack(pady=(24, 4))
 
         self.run_button = ttk.Button(
-            self, text="▶  Chay BKERW", width=28, style="Primary.TButton",
+            self, text="▶  Run BKERW", width=28, style="Primary.TButton",
             command=self.run_algorithm
         )
         self.run_button.pack(pady=12, ipady=4)
 
-        ttk.Button(self, text="←  Quay lai", style="Ghost.TButton",
+        ttk.Button(self, text="←  Back", style="Ghost.TButton",
                    command=lambda: controller.show_frame(HomePage)).pack(pady=10)
 
     def on_show(self):
-        """Lam moi danh sach experiment moi khi vao trang (phong khi vua tao config moi)."""
+        """Refresh the experiment list every time this page is shown (in case a new config was just created)."""
         experiments = get_available_experiments()
         self.combo.config(values=experiments)
         if experiments and not self.experiment_var.get():
@@ -535,16 +538,16 @@ class AlgorithmPage(ttk.Frame):
     def run_algorithm(self):
         experiment_name = self.experiment_var.get().strip()
         if not experiment_name:
-            messagebox.showwarning("Thieu thong tin", "Vui long chon hoac nhap ten Experiment.")
+            messagebox.showwarning("Missing Information", "Please select or enter an Experiment name.")
             return
 
         if not os.path.isfile(MAIN_SCRIPT):
-            messagebox.showerror("Loi", f"Khong tim thay script tai:\n{MAIN_SCRIPT}")
+            messagebox.showerror("Error", f"Script not found at:\n{MAIN_SCRIPT}")
             return
 
         self.run_button.config(state="disabled")
         self.status_label.config(style="Status.TLabel")
-        self.status_var.set(f"Dang chay BKERW voi experiment='{experiment_name}' ...")
+        self.status_var.set(f"Running BKERW with experiment='{experiment_name}' ...")
         self.progress.pack(pady=(0, 10))
         self.progress.start(12)
 
@@ -553,7 +556,7 @@ class AlgorithmPage(ttk.Frame):
         ).start()
 
     def _run_in_background(self, experiment_name):
-        # Lấy param tương ứng với dataset
+        # Get the parameters corresponding to the dataset
         params = DATASET_PARAMS.get(experiment_name, DEFAULT_PARAMS)
 
         cmd = [
@@ -588,20 +591,20 @@ class AlgorithmPage(ttk.Frame):
 
         if success:
             self.status_label.config(style="Success.TLabel")
-            self.status_var.set("Hoan thanh!")
+            self.status_var.set("Done!")
             messagebox.showinfo(
-                "Hoan thanh",
-                f"Chay thuat toan BKERW cho experiment '{experiment_name}' thanh cong!\n\n"
-                "Ket qua (result.txt) va so lieu danh gia (metrics.csv) da duoc luu "
-                "trong thu muc output cua Hydra cho lan chay nay."
+                "Completed",
+                f"BKERW algorithm run for experiment '{experiment_name}' completed successfully!\n\n"
+                "The result (result.txt) and evaluation metrics (metrics.csv) have been saved "
+                "in the Hydra output directory for this run."
             )
         else:
             self.status_label.config(style="Error.TLabel")
-            self.status_var.set("Co loi xay ra khi chay.")
+            self.status_var.set("An error occurred while running.")
             messagebox.showerror(
-                "Loi khi chay",
-                f"Chay thuat toan BKERW cho experiment '{experiment_name}' that bai.\n\n"
-                f"Chi tiet loi:\n{output_log[-1500:]}"
+                "Run Error",
+                f"BKERW algorithm run for experiment '{experiment_name}' failed.\n\n"
+                f"Error details:\n{output_log[-1500:]}"
             )
 
 
