@@ -1,5 +1,5 @@
 import numpy as np
-from biological_random_walks.personalization_vector_creation.pv_creation import PersonalizationVectorCreation
+from BKERW.personalization_vector_creation.pv_creation import PersonalizationVectorCreation
 
 class EmbeddingPersonalizationVectorCreation(PersonalizationVectorCreation):
     def __init__(self, universe, path_gene_embedding, seed_gene, k=0):

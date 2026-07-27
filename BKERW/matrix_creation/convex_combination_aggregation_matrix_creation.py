@@ -1,5 +1,5 @@
 import networkx as nx
-from biological_random_walks.matrix_creation.matrix_aggregation import MatrixAggregation
+from BKERW.matrix_creation.matrix_aggregation import MatrixAggregation
 
 class ConvexCombinationMatrixAggregationCreation(MatrixAggregation):
 	

@@ -1,4 +1,4 @@
-from biological_random_walks.personalization_vector_creation.pv_creation import PersonalizationVectorCreation
+from BKERW.personalization_vector_creation.pv_creation import PersonalizationVectorCreation
 
 
 class BiologicalPersonalizationVectorCreation(PersonalizationVectorCreation):

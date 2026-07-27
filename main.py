@@ -3,8 +3,8 @@ import os
 import hydra
 from omegaconf import DictConfig
 
-from biological_random_walks.BiologicalRandomWalks import BiologicalRandomWalks
-from biological_random_walks.BiologicalRandomWalksWithGeneSim import BiologicalRandomWalksWithGeneSim
+from BKERW.BiologicalRandomWalks import BiologicalRandomWalks
+from BKERW.BiologicalRandomWalksWithGeneSim import BiologicalRandomWalksWithGeneSim
 
 import random
 import math

@@ -1,6 +1,6 @@
 import networkx as nx
 import csv
-from biological_random_walks.BiologicalRandomWalks import BiologicalRandomWalks
+from BKERW.BiologicalRandomWalks import BiologicalRandomWalks
 
 
 class BiologicalRandomWalksWithGeneSim(BiologicalRandomWalks):
